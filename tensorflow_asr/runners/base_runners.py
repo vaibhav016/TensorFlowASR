@@ -74,6 +74,7 @@ class BaseTrainer(BaseRunner):
         # Steps and Epochs start from 0
         # Step must be int64 to use tf.summary
         self.steps = tf.Variable(0, trainable=False, dtype=tf.int64)
+        self._steps = self.steps.numpy()
         self.train_steps_per_epoch = None
         self.eval_steps_per_epoch = None
         # Dataset
@@ -92,9 +93,13 @@ class BaseTrainer(BaseRunner):
     @property
     def epochs(self):
         if self.train_steps_per_epoch is None: return 1
-        return (self.steps.numpy() // self.train_steps_per_epoch) + 1
+        return (self._steps // self.train_steps_per_epoch) + 1
 
     # -------------------------------- GET SET -------------------------------------
+
+    def _update_steps(self):
+        self.steps.assign_add(1)
+        self._steps += 1
 
     @abc.abstractmethod
     def set_train_metrics(self):
@@ -151,8 +156,7 @@ class BaseTrainer(BaseRunner):
             checkpoint_dir = os.path.join(self.config.outdir, "checkpoints")
             if not os.path.exists(checkpoint_dir):
                 os.makedirs(checkpoint_dir)
-            self.ckpt_manager = tf.train.CheckpointManager(
-                self.ckpt, checkpoint_dir, max_to_keep=max_to_keep)
+            self.ckpt_manager = tf.train.CheckpointManager(self.ckpt, checkpoint_dir, max_to_keep=max_to_keep)
 
     def save_checkpoint(self):
         """Save checkpoint."""
@@ -165,6 +169,7 @@ class BaseTrainer(BaseRunner):
         with self.strategy.scope():
             if self.ckpt_manager.latest_checkpoint:
                 self.ckpt.restore(self.ckpt_manager.latest_checkpoint)
+                self._steps = self.steps.numpy()
 
     def save_model_weights(self):
         """ Save the latest model's weights at each save_interval_steps """
@@ -173,16 +178,15 @@ class BaseTrainer(BaseRunner):
     # -------------------------------- RUNNING -------------------------------------
 
     def _finished(self):
-        if self.train_steps_per_epoch is None:
-            return False
-        return self.steps.numpy() >= self.total_train_steps
+        if self.train_steps_per_epoch is None: return False
+        return self._steps >= self.total_train_steps
 
     def run(self):
         """Run training."""
-        if self.steps.numpy() > 0: tf.print("Resume training ...")
+        if self._steps > 0: tf.print("Resume training ...")
 
         self.train_progbar = tqdm(
-            initial=self.steps.numpy(), unit="batch", total=self.total_train_steps,
+            initial=self._steps, unit="batch", total=self.total_train_steps,
             position=0, leave=True,
             bar_format="{desc} |%s{bar:20}%s{r_bar}" % (Fore.GREEN, Fore.RESET),
             desc="[Train]"
@@ -205,15 +209,13 @@ class BaseTrainer(BaseRunner):
         while True:
             try:
                 self._train_function(train_iterator)  # Run train step
-            except StopIteration:
-                break
-            except tf.errors.OutOfRangeError:
+            except (StopIteration, tf.errors.OutOfRangeError, tf.errors.CancelledError):
                 break
             except Exception as e:
                 raise e
 
             # Update steps
-            self.steps.assign_add(1)
+            self._update_steps()
             self.train_progbar.update(1)
             train_steps += 1
 
@@ -221,8 +223,7 @@ class BaseTrainer(BaseRunner):
             self._check_save_interval()
 
             # Print epoch info
-            self.train_progbar.set_description_str(
-                f"[Train] [Epoch {self.epochs}/{self.config.num_epochs}]")
+            self.train_progbar.set_description_str(f"[Train] [Epoch {self.epochs}/{self.config.num_epochs}]")
 
             # Print train info to progress bar
             self._print_train_metrics(self.train_progbar)
@@ -260,7 +261,7 @@ class BaseTrainer(BaseRunner):
             initial=0, total=self.eval_steps_per_epoch, unit="batch",
             position=0, leave=True,
             bar_format="{desc} |%s{bar:20}%s{r_bar}" % (Fore.BLUE, Fore.RESET),
-            desc=f"[Eval] [Step {self.steps.numpy()}]"
+            desc=f"[Eval] [Step {self._steps}]"
         )
         eval_iterator = iter(self.eval_data_loader)
         eval_steps = 0
@@ -268,9 +269,7 @@ class BaseTrainer(BaseRunner):
         while True:
             try:
                 self._eval_function(eval_iterator)  # Run eval step
-            except StopIteration:
-                break
-            except tf.errors.OutOfRangeError:
+            except (StopIteration, tf.errors.OutOfRangeError, tf.errors.CancelledError):
                 break
             except Exception as e:
                 raise e
@@ -315,8 +314,8 @@ class BaseTrainer(BaseRunner):
 
     def _check_log_interval(self):
         """Save log interval."""
-        if (self.steps % self.config.log_interval_steps == 0) or \
-                (self.total_train_steps and self.steps >= self.total_train_steps):
+        if (self._steps % self.config.log_interval_steps == 0) or \
+                (self.total_train_steps and self._steps >= self.total_train_steps):
             self._write_to_tensorboard(self.train_metrics, self.steps, stage="train")
             """Reset train metrics after save it to tensorboard."""
             for metric in self.train_metrics.keys():
@@ -324,15 +323,15 @@ class BaseTrainer(BaseRunner):
 
     def _check_save_interval(self):
         """Save log interval."""
-        if (self.steps % self.config.save_interval_steps == 0) or \
-                (self.total_train_steps and self.steps >= self.total_train_steps):
+        if (self._steps % self.config.save_interval_steps == 0) or \
+                (self.total_train_steps and self._steps >= self.total_train_steps):
             self.save_checkpoint()
             self.save_model_weights()
 
     def _check_eval_interval(self):
         """Save log interval."""
-        if (self.steps % self.config.eval_interval_steps == 0) or \
-                (self.total_train_steps and self.steps >= self.total_train_steps):
+        if (self._steps % self.config.eval_interval_steps == 0) or \
+                (self.total_train_steps and self._steps >= self.total_train_steps):
             self._eval_epoch()
 
     # -------------------------------- UTILS -------------------------------------

@@ -118,9 +118,11 @@ class ASRDataset(BaseDataset):
             dataset = dataset.shuffle(self.buffer_size, reshuffle_each_iteration=True)
 
         if self.enable_tpu:
-            assert self.max_input_length > 0 and self.max_label_length > 0 and self.max_prediction_length > 0, "All max lengths should be computed beforehand to enable TPU support"
+            assert self.max_input_length > 0 and self.max_label_length > 0 and self.max_prediction_length > 0, \
+                "All max lengths should be computed beforehand to enable TPU support"
+            # Features for all samples should be padded to this length statically for TPU training
             input_shape_for_tpu = self.speech_featurizer.shape
-            input_shape_for_tpu[0] = self.max_input_length # Features for all samples should be padded to this length statically for TPU training
+            input_shape_for_tpu[0] = self.max_input_length
             dataset = dataset.padded_batch(
                 batch_size=batch_size,
                 padded_shapes=(
@@ -173,15 +175,17 @@ class ASRDataset(BaseDataset):
         if tf.io.gfile.exists(max_lengths_path):
             print(f"Loading max lengths from {max_lengths_path} ...")
             with tf.io.gfile.GFile(max_lengths_path, 'r') as f:
-                self.max_input_length, self.max_label_length, self.max_prediction_length = [int(l) for l in f.read().split()]
+                self.max_input_length, self.max_label_length, self.max_prediction_length = map(int, f.read().split())
                 return
 
         lines = self.read_entries()
         for line in tqdm.tqdm(lines, desc=f"Computing max lengths for entries in {self.stage} dataset"):
-            _, input_length, _, label_length, _, prediction_length = self.preprocess(str(line[0]), str(line[2]).encode("utf-8"))
+            _, input_length, _, label_length, _, prediction_length = self.preprocess(
+                str(line[0]), str(line[2]).encode("utf-8"))
             self.max_input_length = input_length if input_length > self.max_input_length else self.max_input_length
             self.max_label_length = label_length if label_length > self.max_label_length else self.max_label_length
-            self.max_prediction_length = prediction_length if prediction_length > self.max_prediction_length else self.max_prediction_length
+            self.max_prediction_length = prediction_length \
+                if prediction_length > self.max_prediction_length else self.max_prediction_length
 
         self.max_input_length = int(self.max_input_length.numpy())
         self.max_label_length = int(self.max_label_length.numpy())
@@ -210,7 +214,8 @@ class ASRTFRecordDataset(ASRDataset):
                  enable_tpu: bool = False):
         super(ASRTFRecordDataset, self).__init__(
             stage=stage, speech_featurizer=speech_featurizer, text_featurizer=text_featurizer,
-            data_paths=data_paths, augmentations=augmentations, cache=cache, shuffle=shuffle, buffer_size=buffer_size, enable_tpu=enable_tpu
+            data_paths=data_paths, augmentations=augmentations, cache=cache, shuffle=shuffle,
+            buffer_size=buffer_size, enable_tpu=enable_tpu
         )
         self.tfrecords_dir = tfrecords_dir
         if tfrecords_shards <= 0: raise ValueError("tfrecords_shards must be positive")
