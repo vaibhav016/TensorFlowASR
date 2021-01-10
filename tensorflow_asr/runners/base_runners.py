@@ -65,9 +65,11 @@ class BaseTrainer(BaseRunner):
 
     def __init__(self,
                  config: RunningConfig,
-                 strategy: tf.distribute.Strategy = None):
+                 strategy: tf.distribute.Strategy = None,
+                 enable_tpu: bool = False):
         # Configurations
         super(BaseTrainer, self).__init__(config)
+        self.enable_tpu = enable_tpu
         self.set_strategy(strategy)
         # Steps and Epochs start from 0
         # Step must be int64 to use tf.summary
@@ -335,11 +337,17 @@ class BaseTrainer(BaseRunner):
 
     def _print_train_metrics(self, progbar):
         result_dict = {key: value.result() for key, value in self.train_metrics.items()}
-        progbar.set_postfix(tf_utils.to_numpy_or_python_type(result_dict))
+        if self.enable_tpu:
+            progbar.set_postfix(result_dict)
+        else:
+            progbar.set_postfix(tf_utils.to_numpy_or_python_type(result_dict))
 
     def _print_eval_metrics(self, progbar):
         result_dict = {key: value.result() for key, value in self.eval_metrics.items()}
-        progbar.set_postfix(tf_utils.to_numpy_or_python_type(result_dict))
+        if self.enable_tpu:
+            progbar.set_postfix(result_dict)
+        else:
+            progbar.set_postfix(tf_utils.to_numpy_or_python_type(result_dict))
 
     # -------------------------------- END -------------------------------------
 

@@ -119,7 +119,8 @@ strategy = setup_tpu(args.tpu_address)
 
 conformer_trainer = TransducerTrainer(
     config=config.learning_config.running_config,
-    text_featurizer=text_featurizer, strategy=strategy
+    text_featurizer=text_featurizer, strategy=strategy,
+    enable_tpu=True
 )
 
 with conformer_trainer.strategy.scope():
