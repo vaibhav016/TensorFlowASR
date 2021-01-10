@@ -28,9 +28,10 @@ class TransducerTrainer(BaseTrainer):
     def __init__(self,
                  config: RunningConfig,
                  text_featurizer: TextFeaturizer,
-                 strategy: tf.distribute.Strategy = None):
+                 strategy: tf.distribute.Strategy = None,
+                 enable_tpu: bool = False):
         self.text_featurizer = text_featurizer
-        super(TransducerTrainer, self).__init__(config, strategy=strategy)
+        super(TransducerTrainer, self).__init__(config, strategy=strategy, enable_tpu=enable_tpu)
 
     def set_train_metrics(self):
         self.train_metrics = {
