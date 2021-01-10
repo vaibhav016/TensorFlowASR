@@ -14,6 +14,7 @@
 import abc
 import multiprocessing
 import os
+import json
 
 import numpy as np
 import tensorflow as tf
@@ -40,7 +41,7 @@ def to_tfrecord(path, audio, transcript):
 
 def write_tfrecord_file(splitted_entries):
     shard_path, entries = splitted_entries
-    with tf.io.TFRecordWriter(shard_path, options='ZLIB') as out:
+    with tf.io.TFRecordWriter(shard_path, options="ZLIB") as out:
         for audio_file, _, transcript in entries:
             with open(audio_file, "rb") as f:
                 audio = f.read()
@@ -68,10 +69,9 @@ class ASRDataset(BaseDataset):
         self.enable_tpu = enable_tpu
         self.speech_featurizer = speech_featurizer
         self.text_featurizer = text_featurizer
-        if self.enable_tpu:
-            self.max_input_length = 0
-            self.max_label_length = 0
-            self.max_prediction_length = 0
+        self.max_input_length = 0
+        self.max_label_length = 0
+        self.max_prediction_length = 0
 
     def read_entries(self):
         lines = []
@@ -171,17 +171,20 @@ class ASRDataset(BaseDataset):
 
     def compute_max_lengths(self, max_lengths_path: str = None):
         assert max_lengths_path is not None, "max_lengths_path cannot be None"
-        max_lengths_path = os.path.join(preprocess_paths(max_lengths_path), f"{self.stage}.max_lengths.txt")
+        max_lengths_path = os.path.join(preprocess_paths(max_lengths_path), f"{self.stage}.max_lengths.json")
         if tf.io.gfile.exists(max_lengths_path):
             print(f"Loading max lengths from {max_lengths_path} ...")
-            with tf.io.gfile.GFile(max_lengths_path, 'r') as f:
-                self.max_input_length, self.max_label_length, self.max_prediction_length = map(int, f.read().split())
-                return
+            with tf.io.gfile.GFile(max_lengths_path, "r") as f:
+                content = json.loads(f.read())
+                self.max_input_length = content["max_input_length"]
+                self.max_label_length = content["max_label_length"]
+                self.max_prediction_length = content["max_prediction_length"]
+            return
 
         lines = self.read_entries()
         for line in tqdm.tqdm(lines, desc=f"Computing max lengths for entries in {self.stage} dataset"):
-            _, input_length, _, label_length, _, prediction_length = self.preprocess(
-                str(line[0]), str(line[2]).encode("utf-8"))
+            _, input_length, _, label_length, _, prediction_length = \
+                ASRDataset.preprocess(self, str(line[0]), str(line[2]).encode("utf-8"))
             self.max_input_length = input_length if input_length > self.max_input_length else self.max_input_length
             self.max_label_length = label_length if label_length > self.max_label_length else self.max_label_length
             self.max_prediction_length = prediction_length \
@@ -191,8 +194,14 @@ class ASRDataset(BaseDataset):
         self.max_label_length = int(self.max_label_length.numpy())
         self.max_prediction_length = int(self.max_prediction_length.numpy())
 
-        with tf.io.gfile.GFile(max_lengths_path, 'w') as f:
-            f.write(f"{self.max_input_length} {self.max_label_length} {self.max_prediction_length}")
+        content = {
+            "max_input_length": self.max_input_length,
+            "max_label_length": self.max_label_length,
+            "max_prediction_length": self.max_prediction_length,
+        }
+
+        with tf.io.gfile.GFile(max_lengths_path, "w") as f:
+            f.write(json.dumps(content))
 
         print(f"Max lengths written to {max_lengths_path}")
 
@@ -228,7 +237,7 @@ class ASRTFRecordDataset(ASRDataset):
             tf.io.gfile.makedirs(self.tfrecords_dir)
 
         if tf.io.gfile.glob(os.path.join(self.tfrecords_dir, f"{self.stage}*.tfrecord")):
-            print(f"TFRecords're already existed: {self.stage}")
+            print(f"TFRecords are already existed: {self.stage}")
             return True
 
         print(f"Creating {self.stage}.tfrecord ...")
@@ -273,7 +282,7 @@ class ASRTFRecordDataset(ASRDataset):
         ignore_order = tf.data.Options()
         ignore_order.experimental_deterministic = False
         files_ds = files_ds.with_options(ignore_order)
-        dataset = tf.data.TFRecordDataset(files_ds, compression_type='ZLIB', num_parallel_reads=AUTOTUNE)
+        dataset = tf.data.TFRecordDataset(files_ds, compression_type="ZLIB", num_parallel_reads=AUTOTUNE)
 
         return self.process(dataset, batch_size)
 
@@ -366,7 +375,7 @@ class ASRTFRecordTestDataset(ASRTFRecordDataset):
         ignore_order = tf.data.Options()
         ignore_order.experimental_deterministic = False
         files_ds = files_ds.with_options(ignore_order)
-        dataset = tf.data.TFRecordDataset(files_ds, compression_type='ZLIB', num_parallel_reads=AUTOTUNE)
+        dataset = tf.data.TFRecordDataset(files_ds, compression_type="ZLIB", num_parallel_reads=AUTOTUNE)
 
         return self.process(dataset, batch_size)
 
