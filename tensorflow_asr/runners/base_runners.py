@@ -333,15 +333,11 @@ class BaseTrainer(BaseRunner):
     # -------------------------------- UTILS -------------------------------------
 
     def _print_train_metrics(self, progbar):
-        result_dict = {}
-        for key, value in self.train_metrics.items():
-            result_dict[f"{key}"] = str(value.result().numpy())
+        result_dict = {key: float(value.result()) for key, value in self.train_metrics.items()}
         progbar.set_postfix(result_dict)
 
     def _print_eval_metrics(self, progbar):
-        result_dict = {}
-        for key, value in self.eval_metrics.items():
-            result_dict[f"{key}"] = str(value.result().numpy())
+        result_dict = {key: float(value.result()) for key, value in self.eval_metrics.items()}
         progbar.set_postfix(result_dict)
 
     # -------------------------------- END -------------------------------------
