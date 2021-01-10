@@ -20,7 +20,6 @@ from colorama import Fore
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras.utils import tf_utils
 
 from ..configs.config import RunningConfig
 from ..utils.utils import get_num_batches, bytes_to_string, get_reduced_length
@@ -336,18 +335,14 @@ class BaseTrainer(BaseRunner):
     # -------------------------------- UTILS -------------------------------------
 
     def _print_train_metrics(self, progbar):
-        result_dict = {key: value.result() for key, value in self.train_metrics.items()}
-        if self.enable_tpu:
+        if not self.enable_tpu:
+            result_dict = {key: str(value.result().numpy()) for key, value in self.train_metrics.items()}
             progbar.set_postfix(result_dict)
-        else:
-            progbar.set_postfix(tf_utils.to_numpy_or_python_type(result_dict))
 
     def _print_eval_metrics(self, progbar):
-        result_dict = {key: value.result() for key, value in self.eval_metrics.items()}
-        if self.enable_tpu:
+        if not self.enable_tpu:
+            result_dict = {key: str(value.result().numpy()) for key, value in self.eval_metrics.items()}
             progbar.set_postfix(result_dict)
-        else:
-            progbar.set_postfix(tf_utils.to_numpy_or_python_type(result_dict))
 
     # -------------------------------- END -------------------------------------
 
