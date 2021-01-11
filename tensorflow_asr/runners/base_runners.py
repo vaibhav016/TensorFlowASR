@@ -167,9 +167,13 @@ class BaseTrainer(BaseRunner):
     def load_checkpoint(self):
         """Load checkpoint."""
         with self.strategy.scope():
-            if self.ckpt_manager.latest_checkpoint:
-                self.ckpt.restore(self.ckpt_manager.latest_checkpoint)
-                self._steps = self.steps.numpy()
+            if self.enable_tpu:
+                path = os.path.join(self.config.outdir, "checkpoints", "ckpt")
+                if tf.io.gfile.exists(path): self.ckpt.read(path)
+            else:
+                if self.ckpt_manager.latest_checkpoint:
+                    self.ckpt.restore(self.ckpt_manager.latest_checkpoint)
+            self._steps = self.steps.numpy()
 
     def save_model_weights(self):
         """ Save the latest model's weights at each save_interval_steps """
