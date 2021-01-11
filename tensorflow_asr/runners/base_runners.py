@@ -198,11 +198,11 @@ class BaseTrainer(BaseRunner):
 
         while not self._finished():
             self._train_epoch()
+            if self.enable_tpu: self._eval_epoch()
 
         # save when training is done
         self.save_checkpoint()
         self.save_model_weights()
-        self._eval_epoch()
 
         self.train_progbar.close()
         print("> Finish training")
@@ -321,13 +321,13 @@ class BaseTrainer(BaseRunner):
 
     def _check_save_interval(self):
         """Save log interval."""
-        if self._steps % self.config.save_interval_steps == 0:
+        if self._steps % self.config.save_interval_steps == 0 and not self.enable_tpu:
             self.save_checkpoint()
             self.save_model_weights()
 
     def _check_eval_interval(self):
         """Save log interval."""
-        if self._steps % self.config.eval_interval_steps == 0:
+        if self._steps % self.config.eval_interval_steps == 0 and not self.enable_tpu:
             self._eval_epoch()
 
     # -------------------------------- UTILS -------------------------------------
