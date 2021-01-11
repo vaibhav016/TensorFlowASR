@@ -44,7 +44,8 @@ class TransducerTrainer(BaseTrainer):
         }
 
     def save_model_weights(self):
-        self.model.save_weights(os.path.join(self.config.outdir, "latest.h5"))
+        if self.enable_tpu: self.model.save_weights(os.path.join(self.config.outdir, "checkpoints"))
+        else: self.model.save_weights(os.path.join(self.config.outdir, "latest.h5"))
 
     @tf.function(experimental_relax_shapes=True)
     def _train_step(self, batch):
