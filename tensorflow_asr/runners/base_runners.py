@@ -167,10 +167,9 @@ class BaseTrainer(BaseRunner):
 
     def load_checkpoint(self):
         """Load checkpoint."""
-        self.train_progbar.set_postfix_str("Loading Checkpoint")
+        print("Loading Checkpoint")
         with self.strategy.scope():
-            if self.enable_tpu:
-                self.train_progbar.set_postfix_str("Ignoring loading ckpt, load weights instead")
+            if self.enable_tpu: print("Ignoring loading ckpt, load weights instead")
             else:
                 if self.ckpt_manager.latest_checkpoint:
                     self.ckpt.restore(self.ckpt_manager.latest_checkpoint)
