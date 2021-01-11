@@ -150,26 +150,27 @@ class BaseTrainer(BaseRunner):
 
     def create_checkpoint_manager(self, max_to_keep=10, **kwargs):
         """Create checkpoint management."""
+        checkpoint_dir = os.path.join(self.config.outdir, "checkpoints")
+        if not tf.io.gfile.exists(checkpoint_dir): tf.io.gfile.makedirs(checkpoint_dir)
         with self.strategy.scope():
-            self.ckpt = tf.train.Checkpoint(steps=self.steps, **kwargs)
-            checkpoint_dir = os.path.join(self.config.outdir, "checkpoints")
-            if not tf.io.gfile.exists(checkpoint_dir): tf.io.gfile.makedirs(checkpoint_dir)
             if not self.enable_tpu:
+                self.ckpt = tf.train.Checkpoint(steps=self.steps, **kwargs)
                 self.ckpt_manager = tf.train.CheckpointManager(self.ckpt, checkpoint_dir, max_to_keep=max_to_keep)
 
     def save_checkpoint(self):
         """Save checkpoint."""
+        self.train_progbar.set_postfix_str("Saving Checkpoint")
         with self.strategy.scope():
-            if self.enable_tpu: self.ckpt.write(os.path.join(self.config.outdir, "checkpoints", "ckpt"))
+            if self.enable_tpu: self.train_progbar.set_postfix_str("Ignoring save ckpt, save weights instead")
             else: self.ckpt_manager.save()
-            self.train_progbar.set_postfix_str("Successfully Saved Checkpoint")
+        self.train_progbar.set_postfix_str("Successfully Saved Checkpoint")
 
     def load_checkpoint(self):
         """Load checkpoint."""
+        self.train_progbar.set_postfix_str("Loading Checkpoint")
         with self.strategy.scope():
             if self.enable_tpu:
-                path = os.path.join(self.config.outdir, "checkpoints", "ckpt")
-                if tf.io.gfile.exists(path): self.ckpt.read(path)
+                self.train_progbar.set_postfix_str("Ignoring loading ckpt, load weights instead")
             else:
                 if self.ckpt_manager.latest_checkpoint:
                     self.ckpt.restore(self.ckpt_manager.latest_checkpoint)
