@@ -20,7 +20,7 @@ from tensorflow_asr.utils import env_util
 env_util.setup_environment()
 import tensorflow as tf
 
-DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config.yml")
+DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config_macbook.yml")
 
 tf.keras.backend.clear_session()
 
@@ -38,7 +38,7 @@ parser.add_argument("--bs", type=int, default=None, help="Batch size per replica
 
 parser.add_argument("--spx", type=int, default=1, help="Steps per execution for maximizing performance")
 
-parser.add_argument("--metadata", type=str, default=None, help="Path to file containing metadata")
+parser.add_argument("--metadata", default=False, action="store_true", help="Path to file containing metadata")
 
 parser.add_argument("--static_length", default=False, action="store_true", help="Use static lengths")
 
@@ -47,6 +47,14 @@ parser.add_argument("--devices", type=int, nargs="*", default=[0], help="Devices
 parser.add_argument("--mxp", default=False, action="store_true", help="Enable mixed precision")
 
 args = parser.parse_args()
+
+if args.metadata:
+    metadata = {
+        "train": {"max_input_length": 2974, "max_label_length": 194, "num_entries": 281241},
+        "eval": {"max_input_length": 3516, "max_label_length": 186, "num_entries": 5567},
+    }
+else:
+    metadata = None
 
 tf.config.optimizer.set_experimental_options({"auto_mixed_precision": args.mxp})
 
@@ -98,8 +106,8 @@ else:
         indefinite=True
     )
 
-train_dataset.load_metadata(args.metadata)
-eval_dataset.load_metadata(args.metadata)
+train_dataset.load_metadata(metadata)
+eval_dataset.load_metadata(metadata)
 
 if not args.static_length:
     speech_featurizer.reset_length()
