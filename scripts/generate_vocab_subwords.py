@@ -12,9 +12,7 @@ parser.add_argument("corpus", nargs="*", type=str, default=[], help="Transcript 
 
 parser.add_argument("--config", type=str, default=DEFAULT_YAML, help="The file path of model configuration file")
 
-parser.add_argument("--use_tf", default=False, action="store_true", help="Whether to use tf subwords")
-
-parser.add_argument("--output_file", type=str, default="scripts/", help="Path to file that stores generated subwords")
+parser.add_argument("--output_file", type=str, default=None, help="Path to file that stores generated subwords")
 
 args = parser.parse_args()
 
@@ -22,11 +20,5 @@ config = Config(args.config)
 
 print("Generating subwords ...")
 
-if not args.use_tf:
-    text_featurizer = SubwordFeaturizer.build_from_corpus(config.decoder_config, args.corpus)
-    text_featurizer.save_to_file(args.output_file)
-else:
-    try:
-        TFSubwordFeaturizer.build_from_corpus(config.decoder_config, args.corpus, output_file=args.output_file)
-    except Exception as e:
-        print(e)
+text_featurizer = SubwordFeaturizer.build_from_corpus(config.decoder_config, args.corpus)
+text_featurizer.save_to_file(args.output_file)

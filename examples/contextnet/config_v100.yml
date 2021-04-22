@@ -208,6 +208,8 @@ learning_config:
           mask_factor: 27
     data_paths:
       - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/train-clean-100/LibriSpeech/transcripts.tsv
+      - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/train-clean-360/LibriSpeech/transcripts.tsv
+      - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/train-clean-500/LibriSpeech/transcripts.tsv
     tfrecords_dir: null
     shuffle: True
     cache: True
@@ -231,6 +233,7 @@ learning_config:
     use_tf: True
     data_paths:
        - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/test-clean/LibriSpeech/transcripts.tsv
+       - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/test-other/LibriSpeech/transcripts.tsv
     tfrecords_dir: null
     shuffle: False
     cache: True
@@ -248,11 +251,11 @@ learning_config:
     batch_size: 2
     num_epochs: 20
     checkpoint:
-      filepath: /home/abrol/ASR/TensorFlowASR/examples/contextnet/checkpoints/{epoch:02d}.h5
+      filepath: /home/abrol/ASR/TensorFlowASR/examples/contextnet/model_trained_{epoch:02d}.h5
       save_best_only: True
       save_weights_only: True
       save_freq: epoch
-    states_dir: /home/abrol/ASR/TensorFlowASR/examples/context/states
+    states_dir: /home/abrol/ASR/TensorFlowASR/examples/contextnet/states
     tensorboard:
       log_dir: /home/abrol/ASR/TensorFlowASR/examples/contextnet/tensorboard
       histogram_freq: 1
