@@ -20,7 +20,7 @@ from tensorflow_asr.utils import env_util, file_util
 env_util.setup_environment()
 import tensorflow as tf
 
-DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config.yml")
+DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config_macbook_sanity.yml")
 
 tf.keras.backend.clear_session()
 
@@ -92,7 +92,7 @@ else:
 # build model
 contextnet = ContextNet(**config.model_config, vocabulary_size=text_featurizer.num_classes)
 contextnet.make(speech_featurizer.shape)
-contextnet.load_weights(args.saved)
+contextnet.load_weights(args.saved, by_name=True)
 contextnet.summary(line_length=100)
 contextnet.add_featurizers(speech_featurizer, text_featurizer)
 

@@ -209,7 +209,7 @@ learning_config:
     data_paths:
       - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/train-clean-100/LibriSpeech/transcripts.tsv
       - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/train-clean-360/LibriSpeech/transcripts.tsv
-      - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/train-clean-500/LibriSpeech/transcripts.tsv
+      - /home/abrol/ASR/TensorFlowASR/scripts/Datasets/train-other-500/LibriSpeech/transcripts.tsv
     tfrecords_dir: null
     shuffle: True
     cache: True
