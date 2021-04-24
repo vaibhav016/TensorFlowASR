@@ -463,6 +463,8 @@ class TFSpeechFeaturizer(SpeechFeaturizer):
             features = self.compute_mfcc(signal)
         elif self.feature_type == "log_gammatone_spectrogram":
             features = self.compute_log_gammatone_spectrogram(signal)
+        elif self.feature_type == "raw_waveform_cnn":
+            features = self.compute_cnn_from_raw_waveform(signal)
         else:
             raise ValueError("feature_type must be either 'mfcc', 'log_mel_spectrogram' or 'spectrogram'")
 
@@ -504,3 +506,6 @@ class TFSpeechFeaturizer(SpeechFeaturizer):
         gtone_spectrogram = tf.tensordot(S, gtone, 1)
 
         return self.power_to_db(gtone_spectrogram)
+
+    def compute_cnn_from_raw_waveform(self, signal):
+        pass
