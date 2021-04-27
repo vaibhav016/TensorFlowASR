@@ -508,4 +508,22 @@ class TFSpeechFeaturizer(SpeechFeaturizer):
         return self.power_to_db(gtone_spectrogram)
 
     def compute_cnn_from_raw_waveform(self, signal):
-        pass
+
+        import keras
+        import tensorflow as tf
+
+
+
+        input_x = tf.keras.layers.Input(shape=(None, 1))
+
+        # A convolution block
+        x = tf.keras.layers.Conv1D(filters=80, kernel_size=3, strides=1)(input_x)
+        x = keras.layers.Lambda(lambda x: tf.expand_dims(x, axis=-1))(x)
+        x = keras.layers.Lambda(lambda x: tf.squeeze(x, axis=-3))(x)
+        m = keras.models.Model(inputs=input_x, outputs=x)
+        m.summary()
+
+        m.ca
+
+
+
