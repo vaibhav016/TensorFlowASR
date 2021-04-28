@@ -57,6 +57,7 @@ class ConvModule(tf.keras.layers.Layer):
         outputs = self.activation(outputs)
         return outputs
 
+
 class ConvModuleLR(tf.keras.layers.Layer):
     def __init__(self,
                  kernel_size: int = 3,
@@ -87,7 +88,6 @@ class ConvModuleLR(tf.keras.layers.Layer):
         outputs = self.bn(outputs, training=training)
         outputs = self.activation(outputs)
         return outputs
-
 
 
 class SEModule(tf.keras.layers.Layer):
@@ -197,7 +197,7 @@ class ConvBlock(tf.keras.layers.Layer):
 class CnnFeaturizer(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(CnnFeaturizer, self).__init__(**kwargs)
-        self.conv = tf.keras.layers.Conv1D(filters=80, kernel_size=3, strides=1, name=f"{self.name}_conv")
+        self.conv = tf.keras.layers.Conv1D(filters=80, kernel_size=400, strides=160, name=f"{self.name}_conv")
 
     def call(self, inputs, training=False, **kwargs):
         # outputs = tf.expand_dims(inputs, axis=-1)
