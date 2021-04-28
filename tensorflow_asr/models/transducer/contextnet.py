@@ -80,7 +80,7 @@ class ContextNet(Transducer):
         for block in self.encoder.blocks: self.time_reduction_factor *= block.time_reduction_factor
 
     def call(self, inputs, training=False, **kwargs):
-        enc = self.encoder([inputs["inputs"], inputs["inputs_length"]], training=training, **kwargs)
+        enc = self.encoder([inputs["inputs"], inputs["inputs_length"], inputs["signal"]], training=training, **kwargs)
         pred = self.predict_net([inputs["predictions"], inputs["predictions_length"]], training=training, **kwargs)
         logits = self.joint_net([enc, pred], training=training, **kwargs)
         return data_util.create_logits(

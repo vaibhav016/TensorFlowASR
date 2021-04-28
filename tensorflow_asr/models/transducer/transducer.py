@@ -309,12 +309,14 @@ class Transducer(BaseModel):
         inputs_length = tf.keras.Input(shape=[], batch_size=batch_size, dtype=tf.int32)
         predictions = tf.keras.Input(shape=prediction_shape, batch_size=batch_size, dtype=tf.int32)
         predictions_length = tf.keras.Input(shape=[], batch_size=batch_size, dtype=tf.int32)
+        signal = tf.keras.Input(shape=[None, 1], batch_size=batch_size, dtype=tf.float32)
         self(
             data_util.create_inputs(
                 inputs=inputs,
                 inputs_length=inputs_length,
                 predictions=predictions,
-                predictions_length=predictions_length
+                predictions_length=predictions_length,
+                signal=signal
             ),
             training=False
         )

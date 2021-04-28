@@ -512,8 +512,6 @@ class TFSpeechFeaturizer(SpeechFeaturizer):
         import keras
         import tensorflow as tf
 
-
-
         input_x = tf.keras.layers.Input(shape=(None, 1))
 
         # A convolution block
@@ -523,7 +521,7 @@ class TFSpeechFeaturizer(SpeechFeaturizer):
         m = keras.models.Model(inputs=input_x, outputs=x)
         m.summary()
 
-        m.ca
+
 
 
 

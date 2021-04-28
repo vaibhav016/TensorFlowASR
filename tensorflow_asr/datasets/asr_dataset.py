@@ -148,7 +148,7 @@ class ASRDataset(BaseDataset):
                 prediction = self.text_featurizer.prepand_blank(label)
                 prediction_length = tf.cast(tf.shape(prediction)[0], tf.int32)
 
-                return _path, features, input_length, label, label_length, prediction, prediction_length
+                return _path, features, input_length, label, label_length, prediction, prediction_length, signal
 
             return tf.numpy_function(
                 fn, inp=[path, audio, indices],
@@ -162,6 +162,7 @@ class ASRDataset(BaseDataset):
             features = self.speech_featurizer.tf_extract(signal)
             features = self.augmentations.feature_augment(features)
             input_length = tf.cast(tf.shape(features)[0], tf.int32)
+            signal = tf.expand_dims(signal, axis=-1)
 
             label = tf.strings.to_number(tf.strings.split(indices), out_type=tf.int32)
             label_length = tf.cast(tf.shape(label)[0], tf.int32)
@@ -169,7 +170,7 @@ class ASRDataset(BaseDataset):
             prediction = self.text_featurizer.prepand_blank(label)
             prediction_length = tf.cast(tf.shape(prediction)[0], tf.int32)
 
-            return path, features, input_length, label, label_length, prediction, prediction_length
+            return path, features, input_length, label, label_length, prediction, prediction_length, signal
 
     def parse(self, path: tf.Tensor, audio: tf.Tensor, indices: tf.Tensor):
         """
@@ -177,13 +178,14 @@ class ASRDataset(BaseDataset):
             path, features, input_lengths, labels, label_lengths, pred_inp
         """
         data = self.tf_preprocess(path, audio, indices) if self.use_tf else self.preprocess(path, audio, indices)
-        _, features, input_length, label, label_length, prediction, prediction_length = data
+        _, features, input_length, label, label_length, prediction, prediction_length, signal = data
         return (
             data_util.create_inputs(
                 inputs=features,
                 inputs_length=input_length,
                 predictions=prediction,
-                predictions_length=prediction_length
+                predictions_length=prediction_length,
+                signal=signal
             ),
             data_util.create_labels(
                 labels=label,
@@ -214,7 +216,9 @@ class ASRDataset(BaseDataset):
                     inputs=tf.TensorShape(self.speech_featurizer.shape),
                     inputs_length=tf.TensorShape([]),
                     predictions=tf.TensorShape(self.text_featurizer.prepand_shape),
-                    predictions_length=tf.TensorShape([])
+                    predictions_length=tf.TensorShape([],),
+                    signal=tf.TensorShape([None, 1])
+
                 ),
                 data_util.create_labels(
                     labels=tf.TensorShape(self.text_featurizer.shape),
@@ -226,7 +230,8 @@ class ASRDataset(BaseDataset):
                     inputs=0.0,
                     inputs_length=0,
                     predictions=self.text_featurizer.blank,
-                    predictions_length=0
+                    predictions_length=0,
+                    signal=0.0
                 ),
                 data_util.create_labels(
                     labels=self.text_featurizer.blank,
