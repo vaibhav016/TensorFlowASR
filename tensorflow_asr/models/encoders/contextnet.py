@@ -57,6 +57,37 @@ class ConvModule(tf.keras.layers.Layer):
         outputs = self.activation(outputs)
         return outputs
 
+class ConvModuleLR(tf.keras.layers.Layer):
+    def __init__(self,
+                 kernel_size: int = 3,
+                 strides: int = 1,
+                 filters: int = 256,
+                 activation: str = "silu",
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 **kwargs):
+        super(ConvModuleLR, self).__init__(**kwargs)
+        self.bn = tf.keras.layers.BatchNormalization(name=f"{self.name}_bn")
+        self.activation = get_activation(activation)
+        self.strides = strides
+        self.conv = tf.keras.layers.Conv1D(
+            filters=filters, kernel_size=1, strides=strides, padding="same",
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer, name=f"{self.name}_conv"
+        )
+        self.dsc = tf.keras.layers.DepthwiseConv2D(kernel_size=(kernel_size, 1), strides=(1, 1), padding="same",
+                                                   depth_multiplier=1, dilation_rate=(1, 1), bias_regularizer=bias_regularizer,
+                                                   name=f"{self.name}_convDSC")
+
+    def call(self, inputs, training=False, **kwargs):
+        outputs = self.conv(inputs, training=training)
+        outputs = tf.expand_dims(outputs, axis=-2)
+        outputs = self.dsc(outputs, training=training)
+        outputs = tf.squeeze(outputs, axis=-2)
+        outputs = self.bn(outputs, training=training)
+        outputs = self.activation(outputs)
+        return outputs
+
 
 class SEModule(tf.keras.layers.Layer):
     def __init__(self,
