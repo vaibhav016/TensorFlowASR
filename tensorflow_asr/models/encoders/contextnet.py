@@ -197,7 +197,7 @@ class ConvBlock(tf.keras.layers.Layer):
 class CnnFeaturizer(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(CnnFeaturizer, self).__init__(**kwargs)
-        self.conv = tf.keras.layers.Conv1D(filters=80, kernel_size=400, strides=160, name=f"{self.name}_conv")
+        self.conv = tf.keras.layers.Conv1D(filters=80, kernel_size=400, strides=160,  padding="same", name=f"{self.name}_conv")
 
     def call(self, inputs, training=False, **kwargs):
         # outputs = tf.expand_dims(inputs, axis=-1)
@@ -231,17 +231,9 @@ class ContextNetEncoder(tf.keras.Model):
             )
 
     def call(self, inputs, training=False, **kwargs):
-        print("--------------inside call fx--------------------")
         outputs, input_length, signal = inputs
-        print("the signal is -------", signal)
-        print("the default shape of output is --------", outputs)
-        #insert a conv block here that procesess the signal shape.
         outputs = self.cnn_featurizer(signal, training=training)
-        print("the cnn_output shape is ----------", outputs)
-
-
         # outputs = self.reshape(outputs)
-        print("after reshape =========,", outputs)
         for block in self.blocks:
             outputs, input_length = block([outputs, input_length], training=training)
         return outputs
