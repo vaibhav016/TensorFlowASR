@@ -20,7 +20,7 @@ from tensorflow_asr.utils import env_util
 env_util.setup_environment()
 import tensorflow as tf
 
-DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config_v100.yml")
+DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config_gcp.yml")
 
 tf.keras.backend.clear_session()
 
@@ -119,6 +119,7 @@ with strategy.scope():
         prediction_shape=text_featurizer.prepand_shape,
         batch_size=global_batch_size
     )
+    contextnet.load_weights("model_lr_trained_05.h5", by_name=True)
     contextnet.summary(line_length=100)
 
     optimizer = tf.keras.optimizers.Adam(

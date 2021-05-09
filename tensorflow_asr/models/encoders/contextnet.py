@@ -57,6 +57,7 @@ class ConvModule(tf.keras.layers.Layer):
         outputs = self.activation(outputs)
         return outputs
 
+
 class ConvModuleLR(tf.keras.layers.Layer):
     def __init__(self,
                  kernel_size: int = 3,
@@ -99,7 +100,7 @@ class SEModule(tf.keras.layers.Layer):
                  bias_regularizer = None,
                  **kwargs):
         super(SEModule, self).__init__(**kwargs)
-        self.conv = ConvModule(
+        self.conv = ConvModuleLR(
             kernel_size=kernel_size, strides=strides,
             filters=filters, activation=activation,
             kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
@@ -146,7 +147,7 @@ class ConvBlock(tf.keras.layers.Layer):
         self.convs = []
         for i in range(nlayers - 1):
             self.convs.append(
-                ConvModule(
+                ConvModuleLR(
                     kernel_size=kernel_size, strides=1,
                     filters=filters, activation=activation,
                     kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
@@ -154,7 +155,7 @@ class ConvBlock(tf.keras.layers.Layer):
                 )
             )
 
-        self.last_conv = ConvModule(
+        self.last_conv = ConvModuleLR(
             kernel_size=kernel_size, strides=strides,
             filters=filters, activation=activation,
             kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
@@ -169,7 +170,7 @@ class ConvBlock(tf.keras.layers.Layer):
 
         self.residual = None
         if residual:
-            self.residual = ConvModule(
+            self.residual = ConvModuleLR(
                 kernel_size=kernel_size, strides=strides,
                 filters=filters, activation="linear",
                 kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
