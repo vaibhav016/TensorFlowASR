@@ -21,7 +21,7 @@ _This link has all the tar.gz dataset files, that would be needed. (7.5 gb)_
 4) There is a conda env on the machine. 
     1) **tf2** 
     
-5) Download the environment.yml and store in the current working directory, https://drive.google.com/file/d/1EbZgWls771POqJNhuWt9P62xFKQSiUwz/view?usp=sharing
+5) Check for the environment.yml file in the project directory, if yes, then cool, if not , then Download the environment.yml and store in the current working directory, https://drive.google.com/file/d/1EbZgWls771POqJNhuWt9P62xFKQSiUwz/view?usp=sharing
 There is another file config.yml and create_transcripts.sh which will be used in the code further.  
 
 6) For testing purposes create a new environment
