@@ -43,7 +43,7 @@ def get_conv_module(lrcn, kernel_size: int = 3, strides=1, filters: int = 256, a
         )
     else:
         return ConvModule(
-            kernel_size=kernel_size, strides=1,
+            kernel_size=kernel_size, strides=strides,
             filters=filters, activation=activation,
             kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
             name=name
@@ -189,7 +189,7 @@ class ConvBlock(tf.keras.layers.Layer):
         self.residual = None
         if residual:
             self.residual = get_conv_module(lrcn, kernel_size=kernel_size, strides=strides,
-                                            filters=filters, activation=activation,
+                                            filters=filters, activation="linear",
                                             kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
                                             name=f"{self.name}_residual"
                                             )

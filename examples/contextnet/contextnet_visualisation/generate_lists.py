@@ -2,6 +2,8 @@ import math
 import os
 
 from keras import backend as K
+from tqdm import tqdm
+
 from tensorflow_asr.configs.config import Config
 from tensorflow_asr.datasets.asr_dataset import ASRSliceDataset
 from tensorflow_asr.featurizers.speech_featurizers import TFSpeechFeaturizer
@@ -22,19 +24,24 @@ def obtain_direction(copy_of_the_weights):
     for w in copy_of_the_weights:
         if len(w.shape) == 3:  # check for 3D tensor  or 1d-conv cnn layer  ---- this might be 2D tensor in case of low rank/depthwise seprable tensor
             random_vector = tf.random.normal(w.shape, 0, 1, tf.float32)
-            normalised_current = tf.norm(w)
-            normalised_random_vec = tf.norm(random_vector) + 1e-8
-            random_vector = random_vector * (normalised_current / normalised_random_vec)
+            w_norm_tf = tf.norm(tf.reshape(w, (w.shape[0], -1)), axis=1, keepdims=True)[:, :, None]
+            d_norm1_tf = tf.norm(tf.reshape(random_vector, (random_vector.shape[0], -1)), axis=1, keepdims=True)[:, :, None]
+            random_vector = random_vector * (w_norm_tf / (d_norm1_tf + 1e-10))
+            direction1.append(random_vector)
+        elif len(w.shape) == 4:
+            random_vector = tf.random.normal(w.shape, 0, 1, tf.float32)
+            w_norm_tf = tf.norm(tf.reshape(w, (w.shape[0], -1)), axis=1, keepdims=True)[:, :, None, None]
+            d_norm1_tf = tf.norm(tf.reshape(random_vector, (random_vector.shape[0], -1)), axis=1, keepdims=True)[:, :,None, None]
+            random_vector = random_vector * (w_norm_tf / (d_norm1_tf + 1e-10))
             direction1.append(random_vector)
         else:
-            direction1.append(K.zeros_like(w))  # this step is for final MLP classification layer ----  not relevant for all cnn model
-
+            direction1.append(K.zeros_like(w))
     return direction1
 
 tf.keras.backend.clear_session()
 env_util.setup_environment()
 
-DEFAULT_YAML = "/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/configs_local/config_macbook.yml"
+DEFAULT_YAML = "/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/configs_local/config_macbook_sanity.yml"
 
 tf.config.optimizer.set_experimental_options({"auto_mixed_precision": False})
 strategy = env_util.setup_strategy([0])
@@ -66,7 +73,7 @@ s1 = xcoord_mesh.ravel()[inds]
 s2 = ycoord_mesh.ravel()[inds]
 coordinate = np.c_[s1, s2]
 
-directory = '/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/contextnet_visualisation/checkpoints'
+directory = '/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/contextnet_visualisation/'
 
 for filename in os.listdir(directory):
     if not filename.endswith(".h5"):
@@ -115,7 +122,7 @@ for filename in os.listdir(directory):
     col_value = 0
 
     index_list = []
-    for count, ind in enumerate(inds):
+    for count, ind in tqdm(enumerate(inds)):
         index_list.append(count)
         coord = coordinate[count]
         changes = [d0 * coord[0] + d1 * coord[1] for (d0, d1) in zip(current_direction1, current_direction2)]
