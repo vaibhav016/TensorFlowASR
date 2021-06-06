@@ -39,7 +39,7 @@ def fetch_transcripts(text_files, sanity):
             transcripts.append(f"{audio_file}\t{duration}\t{text}\n")
             if sanity:
                 break
-        if sanity and text_files_read > 5:
+        if sanity and text_files_read > 10:
             break
     return transcripts
 

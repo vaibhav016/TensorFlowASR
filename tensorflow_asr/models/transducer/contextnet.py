@@ -109,7 +109,7 @@ class ContextNet(Transducer):
         Returns:
             tf.Tensor: a batch of decoded transcripts
         """
-        encoded = self.encoder([inputs["inputs"], inputs["inputs_length"]], training=False)
+        encoded = self.encoder([inputs["inputs"], inputs["inputs_length"],  inputs["signal"]], training=False)
         encoded_length = math_util.get_reduced_length(inputs["inputs_length"], self.time_reduction_factor)
         return self._perform_greedy_batch(encoded=encoded, encoded_length=encoded_length)
 
@@ -169,6 +169,6 @@ class ContextNet(Transducer):
         Returns:
             tf.Tensor: a batch of decoded transcripts
         """
-        encoded = self.encoder([inputs["inputs"], inputs["inputs_length"]], training=False)
+        encoded = self.encoder([inputs["inputs"], inputs["inputs_length"], inputs["signal"]], training=False)
         encoded_length = math_util.get_reduced_length(inputs["inputs_length"], self.time_reduction_factor)
         return self._perform_beam_search_batch(encoded=encoded, encoded_length=encoded_length, lm=lm)
