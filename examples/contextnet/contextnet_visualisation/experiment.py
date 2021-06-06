@@ -15,10 +15,11 @@ ycoordinates = np.linspace(small_range, large_range, num=number_of_points)
 
 xcoord_mesh, ycoord_mesh = np.meshgrid(xcoordinates, ycoordinates)
 
-directory = '/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/contextnet_visualisation/checkpoints_cn_lists'
+directory = '/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/contextnet_visualisation/checkpoints_lrcn_lists'
+
 parent_directory = '/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet'
 
-figure_directory = "figs_wave_model_6june"
+figure_directory = "figs_3rd_june_lrcn"
 
 
 def create_viz(loss_list, acc_list, figure_directory, filename, title="none"):
@@ -105,7 +106,7 @@ def create_viz(loss_list, acc_list, figure_directory, filename, title="none"):
     fig.update_xaxes(title_font_family="Courier New")
     fig.update_yaxes(title_font_family="Courier New")
 
-    iplot(fig)
+    # iplot(fig)
 
     fig.write_image(figure_directory + "/loss_accuracy/" + filename + "Loss_Accuracy.png", scale=1)
 
@@ -148,7 +149,7 @@ def create_viz(loss_list, acc_list, figure_directory, filename, title="none"):
         font_family="Courier New")
     fig.update_xaxes(title_font_family="Courier New")
     fig.update_yaxes(title_font_family="Courier New")
-    iplot(fig)
+    # iplot(fig)
     fig.write_image(figure_directory + "/log_loss_accuracy/" + filename + "Log_Loss_Accuracy.png", scale=1)
 
 
@@ -171,8 +172,6 @@ except Exception as e:
     print("Beware dude, trying to overwrite images")
     print(e)
 
-# m = "/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/before_fit_contextnet.h5"
-
 for file in sorted(os.listdir(directory)):
     filename = os.path.join(directory, file)
     print("filenmes ",filename)
@@ -187,6 +186,6 @@ for file in sorted(os.listdir(directory)):
     acc_list = acc_list_beam_char
 
     create_viz(loss_list, acc_list_beam_char, figure_directory, file)
-    break
+
 
 # Do the 2d level curve plots in log space too
