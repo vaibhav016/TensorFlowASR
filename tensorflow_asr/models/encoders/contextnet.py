@@ -22,10 +22,32 @@ L2 = tf.keras.regularizers.l2(1e-6)
 
 def get_activation(activation: str = "silu"):
     activation = activation.lower()
-    if activation in ["silu", "swish"]: return tf.nn.swish
-    elif activation == "relu": return tf.nn.relu
-    elif activation == "linear": return tf.keras.activations.linear
-    else: raise ValueError("activation must be either 'silu', 'swish', 'relu' or 'linear'")
+    if activation in ["silu", "swish"]:
+        return tf.nn.swish
+    elif activation == "relu":
+        return tf.nn.relu
+    elif activation == "linear":
+        return tf.keras.activations.linear
+    else:
+        raise ValueError("activation must be either 'silu', 'swish', 'relu' or 'linear'")
+
+
+def get_conv_module(lrcn, kernel_size: int = 3, strides=1, filters: int = 256, activation: str = 'silu', kernel_regularizer=None,
+                    bias_regularizer=None, name=None):
+    if lrcn:
+        return ConvModuleLR(
+            kernel_size=kernel_size, strides=strides,
+            filters=filters, activation=activation,
+            kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+            name=name
+        )
+    else:
+        return ConvModule(
+            kernel_size=kernel_size, strides=strides,
+            filters=filters, activation=activation,
+            kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+            name=name
+        )
 
 
 class Reshape(tf.keras.layers.Layer):
@@ -38,8 +60,8 @@ class ConvModule(tf.keras.layers.Layer):
                  strides: int = 1,
                  filters: int = 256,
                  activation: str = "silu",
-                 kernel_regularizer = None,
-                 bias_regularizer = None,
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
                  **kwargs):
         super(ConvModule, self).__init__(**kwargs)
         self.strides = strides
@@ -98,14 +120,15 @@ class SEModule(tf.keras.layers.Layer):
                  activation: str = "silu",
                  kernel_regularizer = None,
                  bias_regularizer = None,
+                 lrcn=False,
                  **kwargs):
         super(SEModule, self).__init__(**kwargs)
-        self.conv = ConvModuleLR(
-            kernel_size=kernel_size, strides=strides,
-            filters=filters, activation=activation,
-            kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-            name=f"{self.name}_conv_module"
-        )
+
+        self.conv = get_conv_module(lrcn, kernel_size=kernel_size, strides=strides,
+                                    filters=filters, activation=activation,
+                                    kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+                                    name=f"{self.name}_conv_module"
+                                    )
         self.activation = get_activation(activation)
         self.fc1 = tf.keras.layers.Dense(filters // 8, name=f"{self.name}_fc1")
         self.fc2 = tf.keras.layers.Dense(filters, name=f"{self.name}_fc2")
@@ -135,8 +158,9 @@ class ConvBlock(tf.keras.layers.Layer):
                  residual: bool = True,
                  activation: str = 'silu',
                  alpha: float = 1.0,
-                 kernel_regularizer = None,
-                 bias_regularizer = None,
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 lrcn=False,
                  **kwargs):
         super(ConvBlock, self).__init__(**kwargs)
 
@@ -146,36 +170,29 @@ class ConvBlock(tf.keras.layers.Layer):
 
         self.convs = []
         for i in range(nlayers - 1):
-            self.convs.append(
-                ConvModuleLR(
-                    kernel_size=kernel_size, strides=1,
-                    filters=filters, activation=activation,
-                    kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-                    name=f"{self.name}_conv_module_{i}"
-                )
-            )
+            self.convs.append(get_conv_module(lrcn, kernel_size=kernel_size, strides=1,
+                                              filters=filters, activation=activation,
+                                              kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+                                              name=f"{self.name}_conv_module_{i}"))
 
-        self.last_conv = ConvModuleLR(
-            kernel_size=kernel_size, strides=strides,
-            filters=filters, activation=activation,
-            kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-            name=f"{self.name}_conv_module_{nlayers - 1}"
-        )
+        self.last_conv = get_conv_module(lrcn, kernel_size=kernel_size, strides=strides,
+                                         filters=filters, activation=activation,
+                                         kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+                                         name=f"{self.name}_conv_module_{nlayers - 1}"
+                                         )
 
-        self.se = SEModule(
-            kernel_size=kernel_size, strides=1, filters=filters, activation=activation,
-            kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-            name=f"{self.name}_se"
-        )
+        self.se = SEModule(lrcn=lrcn, kernel_size=kernel_size, strides=1, filters=filters, activation=activation,
+                           kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+                           name=f"{self.name}_se"
+                           )
 
         self.residual = None
         if residual:
-            self.residual = ConvModuleLR(
-                kernel_size=kernel_size, strides=strides,
-                filters=filters, activation="linear",
-                kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-                name=f"{self.name}_residual"
-            )
+            self.residual = get_conv_module(lrcn, kernel_size=kernel_size, strides=strides,
+                                            filters=filters, activation="linear",
+                                            kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+                                            name=f"{self.name}_residual"
+                                            )
 
         self.activation = get_activation(activation)
 
@@ -211,8 +228,9 @@ class ContextNetEncoder(tf.keras.Model):
     def __init__(self,
                  blocks: List[dict] = [],
                  alpha: float = 1.0,
-                 kernel_regularizer = None,
-                 bias_regularizer = None,
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 lrcn=False,
                  **kwargs):
         super(ContextNetEncoder, self).__init__(**kwargs)
 
@@ -225,7 +243,7 @@ class ContextNetEncoder(tf.keras.Model):
             self.blocks.append(
                 ConvBlock(
                     **config, alpha=alpha,
-                    kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+                    kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer, lrcn=lrcn,
                     name=f"{self.name}_block_{i}"
                 )
             )

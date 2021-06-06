@@ -13,5 +13,6 @@ __pycache__
 venv
 my_train
 *.DS_Store
-.ipynb_checkpoints/
+*.ipynb_checkpoints
+*.pytest_cache
 *.ipynb

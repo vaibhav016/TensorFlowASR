@@ -41,5 +41,11 @@ def evaluate_results(filepath: str):
         metrics["greedy_cer"].update_state(decode=greedy, target=groundtruth)
         metrics["beamsearch_wer"].update_state(decode=beamsearch, target=groundtruth)
         metrics["beamsearch_cer"].update_state(decode=beamsearch, target=groundtruth)
+    error_dict = {}
     for key, value in metrics.items():
-        print(f"{key}: {value.result().numpy()}")
+        results = value.result().numpy()
+        print(f"{key}: {results}")
+        error_dict[key] = results
+
+    print(error_dict, "------------------")
+    return error_dict

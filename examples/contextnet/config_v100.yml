@@ -193,6 +193,7 @@ model_config:
   prediction_projection_units: 0
   joint_dim: 640
   joint_activation: tanh
+  lrcn: True
 
 learning_config:
   train_dataset_config:
