@@ -33,6 +33,7 @@ def obtain_direction(copy_of_the_weights):
 
 tf.keras.backend.clear_session()
 env_util.setup_environment()
+
 DEFAULT_YAML = "/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/configs_local/config_macbook.yml"
 
 tf.config.optimizer.set_experimental_options({"auto_mixed_precision": False})

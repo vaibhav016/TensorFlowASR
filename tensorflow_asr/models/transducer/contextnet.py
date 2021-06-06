@@ -37,6 +37,7 @@ class ContextNet(Transducer):
                  prediction_trainable: bool = True,
                  joint_dim: int = 1024,
                  joint_activation: str = "tanh",
+                 lrcn: bool = False,
                  prejoint_linear: bool = True,
                  postjoint_linear: bool = False,
                  joint_mode: str = "add",
@@ -51,6 +52,7 @@ class ContextNet(Transducer):
                 alpha=encoder_alpha,
                 kernel_regularizer=kernel_regularizer,
                 bias_regularizer=bias_regularizer,
+                lrcn=lrcn,
                 trainable=encoder_trainable,
                 name=f"{name}_encoder"
             ),
