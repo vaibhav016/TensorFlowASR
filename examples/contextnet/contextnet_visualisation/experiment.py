@@ -15,10 +15,11 @@ ycoordinates = np.linspace(small_range, large_range, num=number_of_points)
 
 xcoord_mesh, ycoord_mesh = np.meshgrid(xcoordinates, ycoordinates)
 
-directory = '/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/contextnet_visualisation/checkpoints_cn_lists'
+directory = '/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/contextnet_visualisation/checkpoints_lrcn_lists'
+
 parent_directory = '/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet'
 
-figure_directory = "figs_wave_model_6june"
+figure_directory = "figs_3rd_june_lrcn"
 
 
 def create_viz(loss_list, acc_list, figure_directory, filename, title="none"):
@@ -91,11 +92,11 @@ def create_viz(loss_list, acc_list, figure_directory, filename, title="none"):
                                       gridcolor="white",
                                       showbackground=True,
                                       zerolinecolor="white", tick0=-1.5, dtick=0.5, title_font_family="Courier New"),
-                           zaxis=dict(range=[1, 12],
+                           zaxis=dict(range=[1, 30000],
                                       backgroundcolor="rgb(204, 231, 240)",
                                       gridcolor="white",
                                       showbackground=True,
-                                      zerolinecolor="white", tick0=2, dtick=1, title_font_family="Courier New")),
+                                      zerolinecolor="white", title_font_family="Courier New")),
                            camera=dict(eye=dict(x=2, y=2, z=1.5))),
                        margin=dict(l=50, r=10, b=20, t=10),
                        width=500, height=500)
@@ -105,7 +106,7 @@ def create_viz(loss_list, acc_list, figure_directory, filename, title="none"):
     fig.update_xaxes(title_font_family="Courier New")
     fig.update_yaxes(title_font_family="Courier New")
 
-    iplot(fig)
+    # iplot(fig)
 
     fig.write_image(figure_directory + "/loss_accuracy/" + filename + "Loss_Accuracy.png", scale=1)
 
@@ -148,7 +149,7 @@ def create_viz(loss_list, acc_list, figure_directory, filename, title="none"):
         font_family="Courier New")
     fig.update_xaxes(title_font_family="Courier New")
     fig.update_yaxes(title_font_family="Courier New")
-    iplot(fig)
+    # iplot(fig)
     fig.write_image(figure_directory + "/log_loss_accuracy/" + filename + "Log_Loss_Accuracy.png", scale=1)
 
 
@@ -171,11 +172,9 @@ except Exception as e:
     print("Beware dude, trying to overwrite images")
     print(e)
 
-# m = "/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/before_fit_contextnet.h5"
-
 for file in sorted(os.listdir(directory)):
     filename = os.path.join(directory, file)
-    print("filenmes ", "/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/model_5th_iter_trained_01.pkl")
+    print("filenmes ",filename)
     with open(filename, "rb") as f:
         x_temp = pickle.load(f)
 
@@ -186,7 +185,7 @@ for file in sorted(os.listdir(directory)):
     acc_list_beam_char = x_temp['beam_char'][0]
     acc_list = acc_list_beam_char
 
-    create_viz(loss_list, acc_list_beam_char, figure_directory, "model_wave_lrcn")
-    break
+    create_viz(loss_list, acc_list_beam_char, figure_directory, file)
+
 
 # Do the 2d level curve plots in log space too
