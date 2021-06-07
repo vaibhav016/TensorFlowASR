@@ -118,8 +118,8 @@ class SEModule(tf.keras.layers.Layer):
                  strides: int = 1,
                  filters: int = 256,
                  activation: str = "silu",
-                 kernel_regularizer = None,
-                 bias_regularizer = None,
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
                  lrcn=False,
                  **kwargs):
         super(SEModule, self).__init__(**kwargs)
@@ -214,14 +214,17 @@ class ConvBlock(tf.keras.layers.Layer):
 class CnnFeaturizer(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(CnnFeaturizer, self).__init__(**kwargs)
-        self.conv = tf.keras.layers.Conv1D(filters=80, kernel_size=400, strides=160,  padding="same", name=f"{self.name}_conv")
+        self.conv = tf.keras.layers.Conv1D(filters=80, kernel_size=400, strides=160, padding="same", name=f"{self.name}_conv")
 
     def call(self, inputs, training=False, **kwargs):
-        # outputs = tf.expand_dims(inputs, axis=-1)
         outputs = self.conv(inputs, training=training)
-        # outputs = tf.expand_dims(outputs, axis=-1)
-        # outputs = tf.squeeze(outputs, axis=-3)
         return outputs
+
+
+def get_featurizer(wave_model, name):
+    if wave_model:
+        return CnnFeaturizer(name=f"{name}_cnn_featurizer")
+    return Reshape(name=f"{name}_reshape")
 
 
 class ContextNetEncoder(tf.keras.Model):
@@ -230,13 +233,13 @@ class ContextNetEncoder(tf.keras.Model):
                  alpha: float = 1.0,
                  kernel_regularizer=None,
                  bias_regularizer=None,
-                 lrcn=False,
+                 lrcn: bool = False,
+                 wave_model: bool = False,
                  **kwargs):
         super(ContextNetEncoder, self).__init__(**kwargs)
 
-        # self.reshape = Reshape(name=f"{self.name}_reshape")
-
-        self.cnn_featurizer = CnnFeaturizer(name=f"{self.name}_cnn_featurizer")
+        self.wave_model = wave_model
+        self.featurizer = get_featurizer(wave_model, name=self.name)
 
         self.blocks = []
         for i, config in enumerate(blocks):
@@ -250,8 +253,10 @@ class ContextNetEncoder(tf.keras.Model):
 
     def call(self, inputs, training=False, **kwargs):
         outputs, input_length, signal = inputs
-        outputs = self.cnn_featurizer(signal, training=training)
-        # outputs = self.reshape(outputs)
+        if self.wave_model:
+            outputs = self.featurizer(signal, training=training)
+        else:
+            outputs = self.featurizer(outputs)
         for block in self.blocks:
             outputs, input_length = block([outputs, input_length], training=training)
         return outputs
