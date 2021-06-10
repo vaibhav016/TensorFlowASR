@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import math
 import argparse
 from tensorflow_asr.utils import env_util
@@ -20,7 +21,7 @@ from tensorflow_asr.utils import env_util
 env_util.setup_environment()
 import tensorflow as tf
 
-DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config_macbook.yml")
+DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config_dgx.yml")
 
 tf.keras.backend.clear_session()
 
