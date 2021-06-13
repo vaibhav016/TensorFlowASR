@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "GPU-6ff250df-07f5-cf8e-bfdb-d56c3c464126"
 import math
 import argparse
 from tensorflow_asr.utils import env_util
