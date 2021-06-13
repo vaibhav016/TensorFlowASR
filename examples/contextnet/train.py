@@ -21,7 +21,7 @@ from tensorflow_asr.utils import env_util
 env_util.setup_environment()
 import tensorflow as tf
 
-DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config_dgx.yml")
+DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "configs_local/config_macbook_sanity.yml")
 
 tf.keras.backend.clear_session()
 

@@ -28,8 +28,10 @@ def get_activation(activation: str = "silu"):
         return tf.nn.relu
     elif activation == "linear":
         return tf.keras.activations.linear
+    elif activation == "elu":
+        return tf.keras.activations.elu
     else:
-        raise ValueError("activation must be either 'silu', 'swish', 'relu' or 'linear'")
+        raise ValueError("activation must be either 'silu', 'swish', 'relu' or 'linear' , 'elu' only in experiments ")
 
 
 def get_conv_module(lrcn, kernel_size: int = 3, strides=1, filters: int = 256, activation: str = 'silu', kernel_regularizer=None,
@@ -74,9 +76,78 @@ class ConvModule(tf.keras.layers.Layer):
         self.activation = get_activation(activation)
 
     def call(self, inputs, training=False, **kwargs):
+        # print("-------------inside the conv module---------------")
+        # print("the input is------", inputs)
         outputs = self.conv(inputs, training=training)
+        # print("the output after conv", outputs)
         outputs = self.bn(outputs, training=training)
         outputs = self.activation(outputs)
+        return outputs
+
+
+class ConvModuleSimple(tf.keras.layers.Layer):
+    def __init__(self,
+                 kernel_size: int = 3,
+                 strides: int = 1,
+                 filters: int = 256,
+                 activation: str = "silu",
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 **kwargs):
+        super(ConvModuleSimple, self).__init__(**kwargs)
+        self.dmodel=filters
+        self.time_reduction_factor = strides
+        self.bn = tf.keras.layers.BatchNormalization(name=f"{self.name}_bn")
+        self.activation = get_activation("elu")
+        self.strides = strides
+        self.conv = tf.keras.layers.Conv1D(
+            filters=filters, kernel_size=1, strides=strides, padding="same",
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer, name=f"{self.name}_conv"
+        )
+        self.dsc = tf.keras.layers.DepthwiseConv2D(kernel_size=(kernel_size, 1), strides=(1, 1), padding="same",
+                                                   depth_multiplier=1, dilation_rate=(1, 1), bias_regularizer=bias_regularizer,
+                                                   name=f"{self.name}_convDSC")
+        self.l1 = tf.keras.layers.Conv1D(
+            filters=filters, kernel_size=10, strides=1, padding="same",
+            kernel_regularizer=kernel_regularizer, kernel_initializer= tf.keras.initializers.Orthogonal(),
+            bias_regularizer=bias_regularizer, name=f"{self.name}_conv_layer1"
+        )
+        self.l2 = tf.keras.layers.Conv1D(
+            filters=filters, kernel_size=5, strides=1, padding="same",
+            kernel_regularizer=kernel_regularizer, kernel_initializer= tf.keras.initializers.Orthogonal(),
+            bias_regularizer=bias_regularizer, name=f"{self.name}_conv_layer2"
+        )
+        self.l3 = tf.keras.layers.Conv1D(
+            filters=filters, kernel_size=2, strides=1, padding="same",
+            kernel_regularizer=kernel_regularizer, kernel_initializer= tf.keras.initializers.Orthogonal(),
+            bias_regularizer=bias_regularizer, name=f"{self.name}_conv_layer3"
+        )
+
+    def call(self, inputs, training=False, **kwargs):
+        outputs = self.conv(inputs, training=training)
+        outputs = tf.expand_dims(outputs, axis=-2)
+        outputs = self.dsc(outputs, training=training)
+        outputs = tf.squeeze(outputs, axis=-2)
+        outputs = self.bn(outputs, training=training)
+        outputs = self.activation(outputs)
+
+        print("after the DSC-======== ", outputs)
+
+        ##################simple conv layers##################
+
+        outputs = self.l1(outputs, training=training)
+        outputs = self.bn(outputs, training=training)
+        outputs = self.activation(outputs)
+
+        outputs = self.l2(outputs, training=training)
+        outputs = self.bn(outputs, training=training)
+        outputs = self.activation(outputs)
+
+        outputs = self.l3(outputs, training=training)
+        outputs = self.bn(outputs, training=training)
+        outputs = self.activation(outputs)
+
         return outputs
 
 
@@ -169,45 +240,55 @@ class ConvBlock(tf.keras.layers.Layer):
         filters = int(filters * alpha)
 
         self.convs = []
-        for i in range(nlayers - 1):
-            self.convs.append(get_conv_module(lrcn, kernel_size=kernel_size, strides=1,
-                                              filters=filters, activation=activation,
-                                              kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-                                              name=f"{self.name}_conv_module_{i}"))
+        self.convs.append(ConvModuleSimple(kernel_size=kernel_size, strides=1,
+                                          filters=filters, activation=activation,
+                                          kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+                                          name=f"{self.name}_conv_module_{1}"))
+        # for i in range(nlayers - 1):
+        #     self.convs.append(get_conv_module(lrcn, kernel_size=kernel_size, strides=1,
+        #                                       filters=filters, activation=activation,
+        #                                       kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+        #                                       name=f"{self.name}_conv_module_{i}"))
 
-        self.last_conv = get_conv_module(lrcn, kernel_size=kernel_size, strides=strides,
-                                         filters=filters, activation=activation,
-                                         kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-                                         name=f"{self.name}_conv_module_{nlayers - 1}"
-                                         )
 
-        self.se = SEModule(lrcn=lrcn, kernel_size=kernel_size, strides=1, filters=filters, activation=activation,
-                           kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-                           name=f"{self.name}_se"
-                           )
+        # self.last_conv = get_conv_module(lrcn, kernel_size=kernel_size, strides=strides,
+        #                                  filters=filters, activation=activation,
+        #                                  kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+        #                                  name=f"{self.name}_conv_module_{nlayers - 1}"
+        #                                  )
+
+        # self.se = SEModule(lrcn=lrcn, kernel_size=kernel_size, strides=1, filters=filters, activation=activation,
+        #                    kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+        #                    name=f"{self.name}_se"
+        #                    )
 
         self.residual = None
-        if residual:
-            self.residual = get_conv_module(lrcn, kernel_size=kernel_size, strides=strides,
-                                            filters=filters, activation="linear",
-                                            kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
-                                            name=f"{self.name}_residual"
-                                            )
+        # if residual:
+        #     self.residual = get_conv_module(lrcn, kernel_size=kernel_size, strides=strides,
+        #                                     filters=filters, activation="linear",
+        #                                     kernel_regularizer=kernel_regularizer, bias_regularizer=bias_regularizer,
+        #                                     name=f"{self.name}_residual"
+        #                                     )
 
         self.activation = get_activation(activation)
 
     def call(self, inputs, training=False, **kwargs):
         features, input_length = inputs
+        # print("inputs-------------------------------", inputs, input_length)
         outputs = features
+        print("initials=========", outputs)
         for conv in self.convs:
             outputs = conv(outputs, training=training)
-        outputs = self.last_conv(outputs, training=training)
-        input_length = math_util.get_reduced_length(input_length, self.last_conv.strides)
-        outputs = self.se([outputs, input_length], training=training)
-        if self.residual is not None:
-            res = self.residual(features, training=training)
-            outputs = tf.add(outputs, res)
+        # outputs = self.last_conv(outputs, training=training)
+        # print(outputs, " immediate outputs=====")
+        # input_length = math_util.get_reduced_length(input_length, self.last_conv.strides)
+        # outputs = self.se([outputs, input_length], training=training)
+        # print(outputs, " intermediate ===========1")
+        # if self.residual is not None:
+        #     res = self.residual(features, training=training)
+        #     outputs = tf.add(outputs, res)
         outputs = self.activation(outputs)
+        # print(outputs, "outputs=====")
         return outputs, input_length
 
 
@@ -242,7 +323,16 @@ class ContextNetEncoder(tf.keras.Model):
         self.featurizer = get_featurizer(wave_model, name=self.name)
 
         self.blocks = []
+        # self.blocks.append(ConvModuleSimple(kernel_size=3,
+        #          strides=1,
+        #          filters=128,
+        #          activation = "silu",
+        #          kernel_regularizer=None,
+        #          bias_regularizer=None,))
         for i, config in enumerate(blocks):
+            if i<20:
+                continue
+            print("config=====," , config)
             self.blocks.append(
                 ConvBlock(
                     **config, alpha=alpha,
@@ -250,6 +340,7 @@ class ContextNetEncoder(tf.keras.Model):
                     name=f"{self.name}_block_{i}"
                 )
             )
+
 
     def call(self, inputs, training=False, **kwargs):
         outputs, input_length, signal = inputs
