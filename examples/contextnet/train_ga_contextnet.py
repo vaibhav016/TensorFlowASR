@@ -20,7 +20,7 @@ from tensorflow_asr.utils import setup_environment, setup_strategy
 setup_environment()
 import tensorflow as tf
 
-DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config.yml")
+DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "config_ga.yml")
 
 tf.keras.backend.clear_session()
 
