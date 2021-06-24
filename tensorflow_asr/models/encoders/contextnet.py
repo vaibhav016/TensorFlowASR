@@ -240,8 +240,12 @@ class ContextNetEncoder(tf.keras.Model):
 
         self.wave_model = wave_model
         self.featurizer = get_featurizer(wave_model, name=self.name)
-
+        self.feature_output = []
         self.blocks = []
+        # self.dense_layer = tf.keras.layers.Dense(1, name=f"{self.name}_Last_Dense_layer")
+        # self.lambda_layer = tf.keras.layers.Lambda(lambda x: tf.norm(x, axis=1))
+        # self.activation = get_activation("relu")
+
         for i, config in enumerate(blocks):
             self.blocks.append(
                 ConvBlock(
@@ -259,4 +263,25 @@ class ContextNetEncoder(tf.keras.Model):
             outputs = self.featurizer(outputs)
         for block in self.blocks:
             outputs, input_length = block([outputs, input_length], training=training)
+        return outputs
+
+
+    def call_feature_output(self, inputs, training=False, **kwargs):
+        print("inside the call fx of encoder------------------------------", inputs)
+        outputs, input_length, signal = inputs
+        if self.wave_model:
+            outputs = self.featurizer(signal, training=training)
+        else:
+            outputs = self.featurizer(outputs)
+        self.feature_output.append(outputs)
+        for i, block in enumerate(self.blocks):
+            # if i == len(self.blocks) - 1:
+            #     break
+            outputs, input_length = block([outputs, input_length], training=training)
+            self.feature_output.append(outputs)
+
+        # outputs = self.dense_layer(outputs)
+        # self.feature_output.append(outputs)
+        # outputs = self.activation(outputs)
+
         return outputs
