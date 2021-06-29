@@ -194,7 +194,10 @@ model_config:
   joint_dim: 640
   joint_activation: tanh
   lrcn: True
-  wave_model: False
+  wave_model: True
+  wave_kernel_size: 400
+  wave_strides: 160
+  wave_filters: 80
 learning_config:
   train_dataset_config:
     use_tf: True
