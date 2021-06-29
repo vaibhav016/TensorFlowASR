@@ -223,9 +223,14 @@ class CnnFeaturizer(tf.keras.layers.Layer):
 
 
     def call(self, inputs, training=False, **kwargs):
-        outputs = self.conv(inputs, training=training)
-        return outputs
-
+        try:
+            outputs = self.conv(inputs, training=training)
+            return outputs
+        except Exception as e:
+            print(" error is :", e)
+            print("There is some problem with the choice of cnn featurizer kernel, strides and filters")
+            print("Please kindly modify these in config file under the encoder key")
+            return None
 
 def get_featurizer(wave_model,
                    wave_kernel_size=400,
