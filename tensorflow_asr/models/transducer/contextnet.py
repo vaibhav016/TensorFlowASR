@@ -39,6 +39,9 @@ class ContextNet(Transducer):
                  joint_activation: str = "tanh",
                  lrcn: bool = False,
                  wave_model: bool = False,
+                 wave_kernel_size: int = 400,
+                 wave_strides: int = 160,
+                 wave_filters: int = 80,
                  prejoint_linear: bool = True,
                  postjoint_linear: bool = False,
                  joint_mode: str = "add",
@@ -55,6 +58,9 @@ class ContextNet(Transducer):
                 bias_regularizer=bias_regularizer,
                 lrcn=lrcn,
                 wave_model=wave_model,
+                wave_kernel_size=wave_kernel_size,
+                wave_strides=wave_strides,
+                wave_filters=wave_filters,
                 trainable=encoder_trainable,
                 name=f"{name}_encoder"
             ),
@@ -117,7 +123,7 @@ class ContextNet(Transducer):
         Returns:
             tf.Tensor: a batch of decoded transcripts
         """
-        encoded = self.encoder([inputs["inputs"], inputs["inputs_length"],  inputs["signal"]], training=False)
+        encoded = self.encoder([inputs["inputs"], inputs["inputs_length"], inputs["signal"]], training=False)
         encoded_length = math_util.get_reduced_length(inputs["inputs_length"], self.time_reduction_factor)
         return self._perform_greedy_batch(encoded=encoded, encoded_length=encoded_length)
 

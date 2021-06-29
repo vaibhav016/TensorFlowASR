@@ -35,4 +35,28 @@ Now we will see what is Decomp fx:
 3) Finally some gradient accumulation and post processing. 
  
 
+==============================================================================
+
+#Part 3( writing the code for tensorflow)
+
+    'Learnings -'
+  
+1) created a small tensorflow subclassing model, identical to the small pytorch
+model.
+2) Observations 
+    1) the model had 5 layers in a sequence, but when i compiled it the trainable variables 
+    was as list of size 10
+    So each layer is followed by its bias layer. 
+    2) model.layers resulted in 5 layers.
+    3) while iterating over model.layers:
+        layer.bias will give you the bias and its shape would be same as that 
+        of the output of that layer
+    4) Beware that only dense and conv layers have bias, maxpool, and flatten dont.
+    5) in the pytorch model - output_grad is from each layer. So we cant just simply take outputs from
+     conv_blocks. We need to dig deeper and accumulate them from individual layers(obviously conv layers)
+     Then taking biases from those layers, we need to perform that bias*grad operation.
+     
+     
+    
+
 
