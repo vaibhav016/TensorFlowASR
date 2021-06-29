@@ -212,18 +212,30 @@ class ConvBlock(tf.keras.layers.Layer):
 
 
 class CnnFeaturizer(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
+    def __init__(self,
+                 wave_kernel_size=400,
+                 wave_strides=160,
+                 wave_filters=80,
+                 **kwargs):
         super(CnnFeaturizer, self).__init__(**kwargs)
-        self.conv = tf.keras.layers.Conv1D(filters=80, kernel_size=400, strides=160, padding="same", name=f"{self.name}_conv")
+        self.conv = tf.keras.layers.Conv1D(filters=wave_filters, kernel_size=wave_kernel_size,
+                                           strides=wave_strides, padding="same", name=f"{self.name}_conv")
+
 
     def call(self, inputs, training=False, **kwargs):
         outputs = self.conv(inputs, training=training)
         return outputs
 
 
-def get_featurizer(wave_model, name):
+def get_featurizer(wave_model,
+                   wave_kernel_size=400,
+                   wave_strides=160,
+                   wave_filters=80,
+                   name=None):
     if wave_model:
-        return CnnFeaturizer(name=f"{name}_cnn_featurizer")
+        return CnnFeaturizer(wave_kernel_size=wave_kernel_size, wave_strides=wave_strides,
+                             wave_filters=wave_filters,
+                             name=f"{name}_cnn_featurizer")
     return Reshape(name=f"{name}_reshape")
 
 
@@ -235,12 +247,17 @@ class ContextNetEncoder(tf.keras.Model):
                  bias_regularizer=None,
                  lrcn: bool = False,
                  wave_model: bool = False,
+                 wave_kernel_size = 400,
+                 wave_strides = 160,
+                 wave_filters= 80,
                  **kwargs):
         super(ContextNetEncoder, self).__init__(**kwargs)
 
         self.wave_model = wave_model
-        self.featurizer = get_featurizer(wave_model, name=self.name)
-
+        self.featurizer = get_featurizer(wave_model, wave_kernel_size=wave_kernel_size,
+                                         wave_strides=wave_strides, wave_filters=wave_filters,
+                                         name=self.name)
+        self.feature_output = []
         self.blocks = []
         for i, config in enumerate(blocks):
             self.blocks.append(
@@ -254,6 +271,7 @@ class ContextNetEncoder(tf.keras.Model):
     def call(self, inputs, training=False, **kwargs):
         outputs, input_length, signal = inputs
         if self.wave_model:
+
             outputs = self.featurizer(signal, training=training)
         else:
             outputs = self.featurizer(outputs)
