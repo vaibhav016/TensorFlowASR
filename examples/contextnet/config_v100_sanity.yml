@@ -193,6 +193,11 @@ model_config:
   prediction_projection_units: 0
   joint_dim: 640
   joint_activation: tanh
+  lrcn: True
+  wave_model: False
+  wave_kernel_size: 400
+  wave_strides: 160
+  wave_filters: 80
 
 learning_config:
   train_dataset_config:
