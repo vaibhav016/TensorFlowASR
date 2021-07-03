@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+machine_config:
+  a_100: True
+  v_100: False
+  local: False
+
 speech_config:
   sample_rate: 16000
   frame_ms: 25
@@ -195,6 +200,9 @@ model_config:
   joint_activation: tanh
   lrcn: True
   wave_model: False
+  wave_kernel_size: 400
+  wave_strides: 160
+  wave_filters: 80
 
 learning_config:
   train_dataset_config:
@@ -252,8 +260,10 @@ learning_config:
   running_config:
     batch_size: 10
     num_epochs: 20
+    checkpoint_directory: /home/abrol/ASR/TensorFlowASR/examples/contextnet/checkpoints
+
     checkpoint:
-      filepath: /home/abrol/ASR/TensorFlowASR/examples/contextnet/model_trained_{epoch:02d}.h5
+      filepath: /home/abrol/ASR/TensorFlowASR/examples/contextnet/checkpoints/model_trained_{epoch:02d}.h5
       save_best_only: True
       save_weights_only: True
       save_freq: epoch

@@ -94,9 +94,16 @@ class TransducerPrediction(tf.keras.Model):
     def call(self, inputs, training=False, **kwargs):
         # inputs has shape [B, U]
         # use tf.gather_nd instead of tf.gather for tflite conversion
+        # print()
+        # print("++++++++++++++++Inside Transducer Prediction ++++++++++++++++++")
         outputs, prediction_length = inputs
+        # print("the inputs are =====", outputs)
+        # print("the inputs are ==========", prediction_length)
+
         outputs = self.embed(outputs, training=training)
+        # print("the outputs after embed are ==========", prediction_length)
         outputs = self.do(outputs, training=training)
+        # print("the inputs after dropout are ==========", prediction_length)
         for rnn in self.rnns:
             mask = tf.sequence_mask(prediction_length, maxlen=tf.shape(outputs)[1])
             outputs = rnn["rnn"](outputs, training=training, mask=mask)
@@ -105,6 +112,7 @@ class TransducerPrediction(tf.keras.Model):
                 outputs = rnn["ln"](outputs, training=training)
             if rnn["projection"] is not None:
                 outputs = rnn["projection"](outputs, training=training)
+        # print("final output after rnns=========", outputs)
         return outputs
 
     def recognize(self, inputs, states):
@@ -152,8 +160,13 @@ class TransducerJointReshape(tf.keras.layers.Layer):
         self.axis = axis
 
     def call(self, inputs, repeats=None, **kwargs):
+        # print()
+        # print("inside Joint Rehape, inputs ======", inputs)
         outputs = tf.expand_dims(inputs, axis=self.axis)
-        return tf.repeat(outputs, repeats=repeats, axis=self.axis)
+        # print("the outputs after expansion====", outputs)
+        ans = tf.repeat(outputs, repeats=repeats, axis=self.axis)
+        # print("the final output after tf.repeat=====", ans)
+        return ans
 
     def get_config(self):
         conf = super(TransducerJointReshape, self).get_config()
@@ -226,16 +239,35 @@ class TransducerJoint(tf.keras.Model):
         # enc has shape [B, T, E]
         # pred has shape [B, U, P]
         enc_out, pred_out = inputs
+        # print()
+        # print("+++++Inside Transducer Joint+++++++")
+        # print("inputs  encoder output :", enc_out)
+        # print("inputs  pred output :", pred_out)
+
         if self.prejoint_linear:
+            # print("prejoint is true")
             enc_out = self.ffn_enc(enc_out, training=training)  # [B, T, E] => [B, T, V]
             pred_out = self.ffn_pred(pred_out, training=training)  # [B, U, P] => [B, U, V]
+            # print("++++++++encoder after ffn_enc :", enc_out)
+            # print("++++++++ pred after ffn_pred  :", pred_out)
+
         enc_out = self.enc_reshape(enc_out, repeats=tf.shape(pred_out)[1])
         pred_out = self.pred_reshape(pred_out, repeats=tf.shape(enc_out)[1])
+        # print("++++++++encoder after enc_reshape :", enc_out)
+        # print("++++++++ pred after pred_reshape  :", pred_out)
+
         outputs = self.joint([enc_out, pred_out], training=training)
+        # print("++++++++ output after joint  :", outputs)
+
+
         if self.postjoint_linear:
+            # print("postjoint is true")
             outputs = self.ffn(outputs, training=training)
+            # print("++++++++ output after joint  :", outputs)
         outputs = self.activation(outputs, training=training)  # => [B, T, U, V]
+        # print("++++++++ output after activation  :", outputs)
         outputs = self.ffn_out(outputs, training=training)
+        # print("++++++++ output after ffn_out finally============  :", outputs)
         return outputs
 
     def get_config(self):

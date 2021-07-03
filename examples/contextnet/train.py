@@ -12,16 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "GPU-6ff250df-07f5-cf8e-bfdb-d56c3c464126"
+
+DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "configs_local/config_macbook.yml")
+
+
+def assert_machine_used():
+    import yaml
+    yml_file = open(DEFAULT_YAML)
+    parsed_file = yaml.load(yml_file)
+    machine_config = parsed_file.pop("machine_config")
+    machine = 0
+    for i in machine_config.items():
+        machine += 1 if i[1] else 0
+
+    err_message = "\n Multiple machines cannot be selected as True. Only one machine can be selected from the config file!!!!"
+    assert (machine == 1), err_message
+
+    if machine_config["a_100"]:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "GPU-6ff250df-07f5-cf8e-bfdb-d56c3c464126"
+        print(" Cuda visible device configured!! ")
+    print("Machine selected successfully")
+
+
+assert_machine_used()
 import math
 import argparse
 from tensorflow_asr.utils import env_util
 
 env_util.setup_environment()
 import tensorflow as tf
-
-DEFAULT_YAML = os.path.join(os.path.abspath(os.path.dirname(__file__)), "configs_local/config_macbook_sanity.yml")
 
 tf.keras.backend.clear_session()
 

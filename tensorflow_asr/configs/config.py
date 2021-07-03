@@ -59,6 +59,7 @@ class RunningConfig:
         self.batch_size = config.pop("batch_size", 1)
         self.accumulation_steps = config.pop("accumulation_steps", 1)
         self.num_epochs = config.pop("num_epochs", 20)
+        self.checkpoint_directory = config.pop("checkpoint_directory", {})
         for k, v in config.items(): setattr(self, k, v)
 
 
@@ -68,6 +69,8 @@ class LearningConfig:
         self.train_dataset_config = DatasetConfig(config.pop("train_dataset_config", {}))
         self.eval_dataset_config = DatasetConfig(config.pop("eval_dataset_config", {}))
         self.test_dataset_config = DatasetConfig(config.pop("test_dataset_config", {}))
+        self.gradient_dataset_vis_config = DatasetConfig(config.pop("gradient_dataset_vis_config", {}))
+
         self.optimizer_config = config.pop("optimizer_config", {})
         self.running_config = RunningConfig(config.pop("running_config", {}))
         for k, v in config.items(): setattr(self, k, v)

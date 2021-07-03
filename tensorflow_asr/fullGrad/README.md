@@ -55,7 +55,55 @@ model.
     5) in the pytorch model - output_grad is from each layer. So we cant just simply take outputs from
      conv_blocks. We need to dig deeper and accumulate them from individual layers(obviously conv layers)
      Then taking biases from those layers, we need to perform that bias*grad operation.
-     
+
+# Part 4(integrated gradients IG)
+Source = 
+    https://towardsdatascience.com/understanding-deep-learning-models-with-integrated-gradients-24ddce643dbf
+
+1) Sir adviced to read this.
+2) Fundamentally it seems to be similar, 
+`input feature importance that contributes to the model's prediction`
+
+3) computes the gradient of the model’s prediction output to its input features and requires no modification to the original deep neural network.
+4) Its built on 2 axioms(again very similar to what saliency s based on)
+5) saliency defined completeness, and in IG we have Sensitivity
+6) Sensitivity = we establish a Baseline image as a starting point. We then build a sequence of images which we interpolate from a baseline image to the actual image to calculate the integrated gradients.
+7) 2nd is Implementation invariance
+    1) Lets say we have 2 functionally equivalent networks(when their outputs are equal for all inputs despite having very different implementations. )
+    2)  IV is satisfied when two functionally equivalent networks have identical attributions for the same input image and the baseline image.
+    
+8) Lets calculate and visualise IG
+    
+    1) Step 1: Start from the baseline where baseline can be a black 
+    image whose pixel values are all zero or an all-white image, or a random image. 
+    Baseline input is one where the prediction is neutral and is central to any explanation method and 
+    visualizing pixel feature importances.
+    
+    2) Step 2: Generate a linear interpolation between the baseline and the original image. 
+    Interpolated images are small steps(α) in the feature space between your baseline and 
+    input image and consistently increases with each interpolated image’s intensity.
+       
+       ` 
+         x = x' + á(x-x') 
+         1) á -> interpolation constant to perturbed features
+         2) x -> input image tensor
+         3) x'-> baseline image tensor`
+      
+    3) Step 3: Calculate gradients to measure the relationship between changes to a feature and 
+    changes in the model’s predictions.
+    
+        1) So basically gradient informs which pixel has max effect on model's predicted class probabilites
+        2) For interpolated images, gradient is calculated of the predicted logit(probability) wrt to input(image)
+    
+    4) Step 4: Compute the numerical approximation through averaging gradients
+    
+    5) Step 5: Scale the IG to input image and overlay to see the effects of attribution masks
+    
+ 
+ 
+#My leanrings
+
+    1) Norms = basically size of a vector(l1(manhatten), l2(euclidean))
      
     
 
