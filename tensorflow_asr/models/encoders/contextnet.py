@@ -282,4 +282,26 @@ class ContextNetEncoder(tf.keras.Model):
             outputs = self.featurizer(outputs)
         for block in self.blocks:
             outputs, input_length = block([outputs, input_length], training=training)
+
+
+        return outputs
+
+
+    def call_feature_output(self, inputs, training=False, **kwargs):
+        outputs, input_length, signal = inputs
+        if self.wave_model:
+            outputs = self.featurizer(signal, training=training)
+        else:
+            outputs = self.featurizer(outputs)
+        self.feature_output.append(outputs)
+        for i, block in enumerate(self.blocks):
+            # if i == len(self.blocks) - 1:
+            #     break
+            outputs, input_length = block([outputs, input_length], training=training)
+            self.feature_output.append(outputs)
+
+        # outputs = self.flatten(outputs)
+        # outputs = self.dense_layer(outputs)
+        # self.feature_output.append(outputs)
+
         return outputs
