@@ -14,6 +14,7 @@ from tensorflow_asr.models.transducer.contextnet import ContextNet
 from tensorflow_asr.optimizers.schedules import TransformerSchedule
 from tensorflow_asr.utils import app_util
 from tensorflow_asr.utils import env_util
+from tensorflow_asr.gradient_visualisation.plotting_utils import make_directories
 
 
 def get_weights(net):
@@ -38,19 +39,6 @@ def obtain_direction(copy_of_the_weights):
         else:
             direction1.append(tf.zeros_like(w))
     return direction1
-
-
-def make_directories():
-    current_working_directory_abs = os.getcwd()
-    loss_directory_abs = os.path.join(current_working_directory_abs, "loss_lists")
-    try:
-        os.mkdir(loss_directory_abs)
-    except Exception as e:
-        print("--------------Loss list directory already exists-----------------")
-        print("--------------The contents will be over-ridden-------------------")
-        return loss_directory_abs
-
-    return loss_directory_abs
 
 
 tf.keras.backend.clear_session()
@@ -88,7 +76,7 @@ s1 = xcoord_mesh.ravel()[inds]
 s2 = ycoord_mesh.ravel()[inds]
 coordinate = np.c_[s1, s2]
 
-directory_to_save = make_directories()
+directory_to_save = make_directories("loss_lists")
 model_directory = config.learning_config.running_config.checkpoint_directory
 
 for filename in tqdm(sorted(os.listdir(model_directory))):

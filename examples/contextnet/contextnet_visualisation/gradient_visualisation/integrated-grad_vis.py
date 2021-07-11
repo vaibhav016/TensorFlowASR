@@ -1,27 +1,17 @@
+import argparse
 import math
 import os
 import pickle
 
+from tqdm import tqdm
+
+from tensorflow_asr.gradient_visualisation.plotting_utils import make_directories
 from tensorflow_asr.utils import env_util
+
 env_util.setup_environment()
 
 DEFAULT_YAML = "/Users/vaibhavsingh/Desktop/TensorFlowASR/examples/contextnet/configs_local/config_macbook.yml"
-
-
-def make_directories():
-    current_working_directory_abs = os.getcwd()
-    gradient_directory_abs = os.path.join(current_working_directory_abs, "gradient_lists")
-    try:
-        os.mkdir(gradient_directory_abs)
-    except Exception as e:
-        print("--------------gradientlist directory already exists-----------------")
-        print("--------------The contents will be over-ridden-------------------")
-        return gradient_directory_abs
-
-    return gradient_directory_abs
-
-
-directory_to_save = make_directories()
+directory_to_save_gradient_lists = make_directories(os.getcwd(), "gradient_lists")
 
 from tensorflow_asr.configs.config import Config
 from tensorflow_asr.datasets.asr_dataset import ASRSliceDataset
@@ -30,16 +20,22 @@ from tensorflow_asr.featurizers.text_featurizers import CharFeaturizer
 from tensorflow_asr.models.transducer.contextnet import ContextNet
 from tensorflow_asr.optimizers.schedules import TransformerSchedule
 from tensorflow_asr.utils import env_util
-
-env_util.setup_environment()
 import tensorflow as tf
 
 tf.keras.backend.clear_session()
 tf.config.optimizer.set_experimental_options({"auto_mixed_precision": False})
 strategy = env_util.setup_strategy([0])
-
 config = Config(DEFAULT_YAML)
-model_directory = config.learning_config.running_config.checkpoint_directory
+
+parser = argparse.ArgumentParser(prog=" Compute Gradients Lists")
+parser.add_argument("--model_list_folder", "-f", type=str, default=config.learning_config.running_config.checkpoint_directory, help="gives full path to the saved models")
+args = parser.parse_args()
+
+if not args.model_list_folder:
+    assert False
+else:
+    model_directory = args.model_list_folder
+
 last_trained_model = os.path.join(model_directory, sorted(os.listdir(model_directory))[-1])
 
 speech_featurizer = TFSpeechFeaturizer(config.speech_config)
@@ -55,10 +51,8 @@ visualisation_dataset = ASRSliceDataset(
 
 batch_size = 1
 visualisation_gradient_loader = visualisation_dataset.create(batch_size)
-
 contextnet = ContextNet(**config.model_config, vocabulary_size=text_featurizer.num_classes)
 contextnet.make(speech_featurizer.shape)
-
 contextnet.load_weights(last_trained_model, by_name=True)
 contextnet.add_featurizers(speech_featurizer, text_featurizer)
 
@@ -129,14 +123,14 @@ def get_integrated_gradients(encoder, mel_spec, inputs_length, signal, activated
     return integrated_gradients, integrated_random_gradients
 
 
-for filename in os.listdir(model_directory):
+for filename in tqdm(sorted(os.listdir(model_directory))):
     if not filename.endswith(".h5"):
         print(filename)
         continue
 
     gradient_file = filename.split('.')[0]
     model_name = os.path.join(model_directory, filename)
-    print(model_name)
+    print("model being processed now: ", model_name)
 
     contextnet.load_weights(model_name, by_name=True)
     encoder = contextnet.layers[0]
@@ -171,8 +165,14 @@ for filename in os.listdir(model_directory):
 
     dd = {'input_image': images_check,
           'integrated_gradients': gradients_check,
-          'random_integrated_gradients': random_gradients_check
+          'random_integrated_gradients': random_gradients_check,
+          'index_of_activated_node': activated_node_list,
+          'index_of_random_node': random_activated_node_list
           }
 
-    with open(directory_to_save + filename + ".pkl", 'wb') as f:
+    file_path_to_save = os.path.join(directory_to_save_gradient_lists, filename)
+
+    with open(file_path_to_save + ".pkl", 'wb') as f:
         pickle.dump(dd, f)
+    f.close()
+
